@@ -1,0 +1,130 @@
+<html>
+<head>
+  <title>Twister</title>
+  <link rel="stylesheet" href="css/stylesheet.css" type="text/css" charset="utf-8" />
+</head>
+<body>
+<script src="http://code.jquery.com/jquery-latest.js"></script>
+<script src="/js/knockout-2.1.0.js"></script>
+<script src="/js/game.js"></script>
+<script src="/js/player.js"></script>
+<script src="/nowjs/now.js"></script>
+<script>
+now.ready(function () {
+  var pvm, gvm, time = { timeLeft: ko.observable('') };
+  var name = prompt("Enter your name: ");
+  name = name ? name : "Player" + (++now.id);
+  now.startGame = function () {
+    pvm = new PlayerViewModel(name);
+    gvm = new GameViewModel(now.letters, now.words);
+    pvm.setGame(gvm);
+    ko.applyBindings(time, $('#timer')[0]);
+    ko.applyBindings(pvm, $('#playerModel')[0]);
+    ko.applyBindings(gvm, $('#gameModel')[0]);
+  };
+  now.updateTimer = function () {
+    time.timeLeft(now.timeLeft);
+  };
+  now.playWord = function (word, playerName) {
+    console.log(now.playerScores);
+    if (name === playerName) {
+      pvm.submitWord();
+    } else {
+      gvm.playWord(word);
+    }
+  };
+  now.updateScores = function () {
+    gvm.updateScores(now.playerScores);
+  };
+
+  if (now.gameInProgress) {
+    now.startGame();
+    for (var word in now.playedWords) {
+      gvm.playWord(word);
+    }
+    now.updateScores();
+  }
+
+  // prevent the backspace key from navigating back.
+  $(document).unbind('keydown').bind('keydown', function (e) {
+    var doPrevent = false;
+    var kc = e.keyCode;
+    if (kc === 49) { // 1
+      now.tryStartGame();
+    } else if (now.gameInProgress) {
+      if (kc === 8) {
+        var d = e.srcElement || e.target;
+        if ((d.tagName.toUpperCase() === 'INPUT' && d.type.toUpperCase() === 'TEXT') ||
+            d.tagName.toUpperCase() === 'TEXTAREA') {
+          doPrevent = d.readOnly || d.disabled;
+        } else {
+          doPrevent = true;
+          console.log("BACKSPACE");
+          pvm.deleteLetter();
+        }
+      } else if (kc >= 65 && kc <= 90) { // lower-case alpha
+        console.log(String.fromCharCode(kc));
+        pvm.playLetter(String.fromCharCode(kc));
+      } else if (kc == 13) { // enter
+        console.log("ENTER");
+        var word = pvm.getWord();
+        if (!gvm.findWord(word)) {
+          pvm.submitWord();
+        } else {
+          now.trySubmitWord(word, name);
+        }
+      } else if (kc == 32) { // spacebar
+        pvm.shuffle();
+        doPrevent = true;
+      } else {
+        console.log("GOT: " + kc);
+      }
+    }
+
+    if (doPrevent) {
+      e.preventDefault();
+    }
+  });
+});
+
+</script>
+
+<div class="container">
+  <div id="top">
+    <div id="instructions" align="left" position="absolute">
+      <pre align="center">
+[1]         - NEW GAME   
+[ENTER]     - SUBMIT WORD
+[SPACEBAR]  - SHUFFLE    
+[BACKSPACE] - BACKSPACE  
+      </pre>
+    </div>
+    <div data-bind="text: timeLeft" id="timer" style="float:right;" align="right" position="absolute"></div>
+  </div><hr>
+  <div id="playerModel">
+    <span></span><br><br>
+    <div data-bind="template: { name:'letterTmpl', foreach: playedLetters }"></div>
+    <br><br>
+    <div data-bind="template: { name:'letterTmpl', foreach: availableLetters }"></div>
+  </div>
+  <br><br>
+  <div id="gameModel">
+    <div class="scores" data-bind="template: { name:'scoreTmpl', foreach: scores }"></div>
+    <div align="right" data-bind="template: { name:'wordTmpl', foreach: words }"></div>
+    <br>
+  </div>
+</div>
+
+<script id="letterTmpl" type="text/html">
+  <div class="huge" data-bind="text: (v() && c() !== '_' ? c().toLowerCase() : '-')"></div>
+</script>
+
+<script id="wordTmpl" type="text/html">
+  <span data-bind="text: (played() ? word : (new Array(word.length + 1)).join('&#9723;'))"></span><br>
+</script>
+
+<script id="scoreTmpl" type="text/html">
+  <span data-bind="text: '[' + name + '] ' + score()"></span><br>
+</script>
+</body>
+</html>
