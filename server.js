@@ -16,7 +16,7 @@ app.get('/', function (req, res) {
 });
 
 const timeLimit = 2*60*1000; // 2 mins
-var server = app.listen(8080);
+var server = app.listen(process.env.PORT || 8080);
 var everyone = nowjs.initialize(server);
 
 function getTiles() {

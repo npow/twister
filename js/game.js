@@ -30,21 +30,5 @@ function GameViewModel(letters, words) {
     }
     self.scores.sort(function (a, b) { return a.score() < b.score(); });
   };
-
-  self.sortFunction = function (a, b) {
-    return a.score > b.score;
-  };
-
-  self.sortedScores = ko.computed({
-    read: function () {
-      var arr = [];
-      for (var player in self.playerScores) {
-        arr.push({player: player, score: self.playerScores[player]()});
-      }
-      arr.sort(self.sortFunction);
-      return arr;
-    },
-    deferEvaluation: true
-  }, self);
 }
 
